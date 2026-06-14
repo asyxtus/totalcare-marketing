@@ -1275,12 +1275,8 @@ function toggleFaq(btn) {
 }
 
 // Demo form
-document.getElementById('demo-form') 
-  ? setupDemoForm() 
-  : document.querySelector('[onsubmit]') && null
-
 function setupDemoForm() {
-  document.getElementById('demo-form').addEventListener('submit', async function(e) {
+  document.getElementById('demo-form').addEventListener('submit', function(e) {
     e.preventDefault()
     const btn  = document.getElementById('demo-submit-btn')
     const form = e.target
@@ -1296,22 +1292,52 @@ function setupDemoForm() {
       facility_type: form.facility_type.value,
     }
 
-    try {
-      await fetch('https://script.google.com/macros/s/AKfycbzSoeExU13YgbonaGHUav-uGVQvCP6_QBfZdybzRyVRSj_5ZYr64ad8IzH3xXiL0jDxbg/exec', {
-        method: 'POST',
-        mode:   'no-cors',
-        headers:{ 'Content-Type': 'application/json' },
-        body:   JSON.stringify(data),
-      })
+    // Build URL with data as query parameters
+    // Google Apps Script reads these via e.parameter
+    const YOUR_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSoeExU13YgbonaGHUav-uGVQvCP6_QBfZdybzRyVRSj_5ZYr64ad8IzH3xXiL0jDxbg/exec'
 
-      // no-cors means we can't read the response — assume success
+    const params = new URLSearchParams({
+      name:          data.name,
+      facility:      data.facility,
+      phone:         data.phone,
+      email:         data.email,
+      facility_type: data.facility_type,
+    })
+
+    // Create a hidden iframe to submit the data
+    // This avoids CORS entirely — the iframe loads the script URL
+    // and the sheet gets the row without the browser blocking it
+    const iframe = document.createElement('iframe')
+    iframe.style.display = 'none'
+    iframe.name = 'hidden-form-target'
+    document.body.appendChild(iframe)
+
+    const hiddenForm = document.createElement('form')
+    hiddenForm.method = 'POST'
+    hiddenForm.action = YOUR_SCRIPT_URL
+    hiddenForm.target = 'hidden-form-target'
+
+    Object.entries(data).forEach(([key, val]) => {
+      const input = document.createElement('input')
+      input.type  = 'hidden'
+      input.name  = key
+      input.value = val
+      hiddenForm.appendChild(input)
+    })
+
+    document.body.appendChild(hiddenForm)
+    hiddenForm.submit()
+
+    // Show success after short delay
+    // (we can't detect completion from iframe — just assume success)
+    setTimeout(() => {
       document.getElementById('demo-form').innerHTML = `
         <div style="text-align:center;padding:20px 0">
           <div style="font-size:48px;margin-bottom:16px">✅</div>
-          <h3 style="font-size:20px;font-weight:700;color:var(--char);margin-bottom:8px">
+          <h3 style="font-size:20px;font-weight:700;color:#111827;margin-bottom:8px">
             Demo request received!
           </h3>
-          <p style="font-size:15px;color:var(--gray-600);line-height:1.6;margin-bottom:24px">
+          <p style="font-size:15px;color:#4B5563;line-height:1.6;margin-bottom:24px">
             Thank you, <strong>${data.name}</strong>.<br>
             We will contact you on <strong>${data.phone}</strong> within 2 hours.
           </p>
@@ -1321,15 +1347,11 @@ function setupDemoForm() {
           </button>
         </div>`
 
-    } catch(err) {
-      btn.textContent = 'Something went wrong — try again'
-      btn.style.background = '#DC2626'
-      btn.disabled = false
-      setTimeout(() => {
-        btn.textContent = 'Book my 30-minute demo →'
-        btn.style.background = ''
-      }, 3000)
-    }
+      // Cleanup
+      document.body.removeChild(hiddenForm)
+      setTimeout(() => document.body.removeChild(iframe), 2000)
+
+    }, 1500)
   })
 }
 
