@@ -1291,7 +1291,7 @@ function toggleFaq(btn) {
   if (!isOpen) item.classList.add('open')
 }
 
-// Demo form — hidden iframe method avoids CORS with Google Apps Script
+// Demo form — Google Forms direct submission (no CORS issues)
 document.addEventListener('DOMContentLoaded', function() {
   var form = document.getElementById('demo-form')
   if (!form) return
@@ -1306,54 +1306,30 @@ document.addEventListener('DOMContentLoaded', function() {
     var email    = form.querySelector('[name="email"]').value || ''
     var ftype    = form.querySelector('[name="facility_type"]').value
 
-    // ── PASTE YOUR GOOGLE APPS SCRIPT URL BELOW ──────────────
-    var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSoeExU13YgbonaGHUav-uGVQvCP6_QBfZdybzRyVRSj_5ZYr64ad8IzH3xXiL0jDxbg/exec'
-    // ─────────────────────────────────────────────────────────
-
     btn.textContent = 'Sending...'
     btn.disabled    = true
 
-    // Create hidden iframe so the POST goes directly to Google
-    // without triggering CORS errors in the browser
-    var iframe = document.createElement('iframe')
-    iframe.name = 'tc-submit-frame'
-    iframe.style.display = 'none'
-    document.body.appendChild(iframe)
+    var url  = 'https://docs.google.com/forms/d/e/1FAIpQLSeuidek0kU7vrndflUtqMqCBJE1_EvigvywvGlyIAJd_yihgw/formResponse'
+    var data = new FormData()
+    data.append('entry.899487679',  name)
+    data.append('entry.1955369023', facility)
+    data.append('entry.475293957',  phone)
+    data.append('entry.706464234',  email)
+    data.append('entry.472220153',  ftype)
 
-    var hidden = document.createElement('form')
-    hidden.method = 'POST'
-    hidden.action = SCRIPT_URL
-    hidden.target = 'tc-submit-frame'
+    fetch(url, { method: 'POST', mode: 'no-cors', body: data })
 
-    var fields = { name: name, facility: facility, phone: phone, email: email, facility_type: ftype }
-    Object.keys(fields).forEach(function(k) {
-      var inp = document.createElement('input')
-      inp.type  = 'hidden'
-      inp.name  = k
-      inp.value = fields[k]
-      hidden.appendChild(inp)
-    })
-
-    document.body.appendChild(hidden)
-    hidden.submit()
-
-    // Show success after 1.5s (can't read iframe response due to cross-origin)
     setTimeout(function() {
       document.getElementById('demo-form-wrap').innerHTML =
         '<div style="text-align:center;padding:20px 0">' +
-        '<div style="font-size:48px;margin-bottom:16px">✅</div>' +
+        '<div style="font-size:48px;margin-bottom:16px">&#x2705;</div>' +
         '<h3 style="font-size:20px;font-weight:700;color:#111827;margin-bottom:8px">Demo request received!</h3>' +
-        '<p style="font-size:15px;color:#4B5563;line-height:1.6;margin-bottom:24px">Thank you, <strong>' + name + '</strong>.<br>We will contact you on <strong>' + phone + '</strong> within 2 hours.</p>' +
-        '<button onclick="document.getElementById(\'demo-modal\').style.display=\'none\'" ' +
+        '<p style="font-size:15px;color:#4B5563;line-height:1.6;margin-bottom:24px">Thank you, <strong>' + name + '</strong>.<br>' +
+        'We will contact you on <strong>' + phone + '</strong> within 2 hours.</p>' +
+        '<button onclick="document.getElementById('demo-modal').style.display='none'" ' +
         'style="background:#1A7A5E;color:white;padding:12px 24px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;width:100%">Close</button>' +
         '</div>'
-
-      // Clean up
-      document.body.removeChild(hidden)
-      setTimeout(function() {
-        if (iframe.parentNode) document.body.removeChild(iframe)
-      }, 3000)
-    }, 1500)
+    }, 1000)
   })
 })
 
