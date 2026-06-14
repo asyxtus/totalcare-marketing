@@ -1277,11 +1277,18 @@ function toggleFaq(btn) {
 // Demo form
 function submitDemo(e) {
   e.preventDefault()
-  const btn = e.target.querySelector('button[type="submit"]')
-  btn.textContent = '✓ Demo booked! We\'ll contact you on WhatsApp.'
-  btn.style.background = '#16a34a'
-  btn.disabled = true
-  setTimeout(() => document.getElementById('demo-modal').style.display = 'none', 2500)
+  const form = e.target
+  const name = form.querySelector('input[type="text"]').value
+  const facility = form.querySelectorAll('input[type="text"]')[1].value
+  const phone = form.querySelector('input[type="tel"]').value
+  const type = form.querySelector('select').value
+
+  const message = encodeURIComponent(
+    `New demo request:\nName: ${name}\nFacility: ${facility}\nPhone: ${phone}\nType: ${type}`
+  )
+  // Replace 237XXXXXXXXX with your actual WhatsApp number
+  window.open(`https://wa.me/237674806650?text=${message}`, '_blank')
+  document.getElementById('demo-modal').style.display = 'none'
 }
 
 // Sticky nav on scroll
