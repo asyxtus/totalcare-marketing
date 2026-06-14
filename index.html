@@ -1234,25 +1234,42 @@ footer{background:var(--char);color:rgba(255,255,255,.6);padding:60px 0 32px}
     <div style="font-size:28px;margin-bottom:8px">📅</div>
     <h3 style="font-size:22px;font-weight:700;margin-bottom:6px;color:var(--char)">Book a Demo</h3>
     <p style="font-size:14px;color:var(--gray-600);margin-bottom:24px;line-height:1.6">30 minutes. We show you the platform live. You ask every question you have. No sales pressure.</p>
-    <form id="demo-form">
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <input type="text" placeholder="Your name" required style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--teal-500)'" onblur="this.style.borderColor='var(--gray-200)'">
-        <input type="text" placeholder="Facility name" required style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--teal-500)'" onblur="this.style.borderColor='var(--gray-200)'">
-        <input type="tel" placeholder="WhatsApp number (+237...)" required style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--teal-500)'" onblur="this.style.borderColor='var(--gray-200)'">
-        <select required style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;color:var(--gray-600);background:white">
+    <div id="demo-form-wrap">
+      <form id="demo-form" style="display:flex;flex-direction:column;gap:14px">
+        <input name="name" type="text" placeholder="Your name" required
+          style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color .15s"
+          onfocus="this.style.borderColor='var(--teal-500)'"
+          onblur="this.style.borderColor='var(--gray-200)'">
+        <input name="facility" type="text" placeholder="Facility name" required
+          style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color .15s"
+          onfocus="this.style.borderColor='var(--teal-500)'"
+          onblur="this.style.borderColor='var(--gray-200)'">
+        <input name="phone" type="tel" placeholder="WhatsApp / phone (+237...)" required
+          style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color .15s"
+          onfocus="this.style.borderColor='var(--teal-500)'"
+          onblur="this.style.borderColor='var(--gray-200)'">
+        <input name="email" type="email" placeholder="Email address (optional)"
+          style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color .15s"
+          onfocus="this.style.borderColor='var(--teal-500)'"
+          onblur="this.style.borderColor='var(--gray-200)'">
+        <select name="facility_type" required
+          style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;color:var(--gray-600);background:white">
           <option value="">Facility type...</option>
           <option>Solo cabinet / doctor</option>
-          <option>Clinic (5–20 staff)</option>
+          <option>Clinic (5-20 staff)</option>
           <option>Polyclinic / medical center</option>
           <option>Hospital</option>
           <option>Pharmacy</option>
           <option>Multi-branch network</option>
           <option>NGO / corporate medical</option>
         </select>
-        <button type="submit" id="demo-submit-btn" class="btn btn--primary" style="width:100%;justify-content:center;padding:14px">Book my 30-minute demo →</button>
-      </div>
-    </form>
-    <p style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:14px">We'll confirm via WhatsApp within 2 hours</p>
+        <button type="submit" id="demo-submit-btn" class="btn btn--primary"
+          style="width:100%;justify-content:center;padding:14px">
+          Book my 30-minute demo →
+        </button>
+      </form>
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:14px">We will confirm via WhatsApp within 2 hours</p>
   </div>
 </div>
 
@@ -1274,88 +1291,71 @@ function toggleFaq(btn) {
   if (!isOpen) item.classList.add('open')
 }
 
-// Demo form
-function setupDemoForm() {
-  document.getElementById('demo-form').addEventListener('submit', function(e) {
+// Demo form — hidden iframe method avoids CORS with Google Apps Script
+document.addEventListener('DOMContentLoaded', function() {
+  var form = document.getElementById('demo-form')
+  if (!form) return
+
+  form.addEventListener('submit', function(e) {
     e.preventDefault()
-    const btn  = document.getElementById('demo-submit-btn')
-    const form = e.target
+
+    var btn      = document.getElementById('demo-submit-btn')
+    var name     = form.querySelector('[name="name"]').value
+    var facility = form.querySelector('[name="facility"]').value
+    var phone    = form.querySelector('[name="phone"]').value
+    var email    = form.querySelector('[name="email"]').value || ''
+    var ftype    = form.querySelector('[name="facility_type"]').value
+
+    // ── PASTE YOUR GOOGLE APPS SCRIPT URL BELOW ──────────────
+    var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSoeExU13YgbonaGHUav-uGVQvCP6_QBfZdybzRyVRSj_5ZYr64ad8IzH3xXiL0jDxbg/exec'
+    // ─────────────────────────────────────────────────────────
 
     btn.textContent = 'Sending...'
     btn.disabled    = true
 
-    const data = {
-      name:          form.name.value,
-      facility:      form.facility.value,
-      phone:         form.phone.value,
-      email:         form.email?.value || '',
-      facility_type: form.facility_type.value,
-    }
-
-    // Build URL with data as query parameters
-    // Google Apps Script reads these via e.parameter
-    const YOUR_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSoeExU13YgbonaGHUav-uGVQvCP6_QBfZdybzRyVRSj_5ZYr64ad8IzH3xXiL0jDxbg/exec'
-
-    const params = new URLSearchParams({
-      name:          data.name,
-      facility:      data.facility,
-      phone:         data.phone,
-      email:         data.email,
-      facility_type: data.facility_type,
-    })
-
-    // Create a hidden iframe to submit the data
-    // This avoids CORS entirely — the iframe loads the script URL
-    // and the sheet gets the row without the browser blocking it
-    const iframe = document.createElement('iframe')
+    // Create hidden iframe so the POST goes directly to Google
+    // without triggering CORS errors in the browser
+    var iframe = document.createElement('iframe')
+    iframe.name = 'tc-submit-frame'
     iframe.style.display = 'none'
-    iframe.name = 'hidden-form-target'
     document.body.appendChild(iframe)
 
-    const hiddenForm = document.createElement('form')
-    hiddenForm.method = 'POST'
-    hiddenForm.action = YOUR_SCRIPT_URL
-    hiddenForm.target = 'hidden-form-target'
+    var hidden = document.createElement('form')
+    hidden.method = 'POST'
+    hidden.action = SCRIPT_URL
+    hidden.target = 'tc-submit-frame'
 
-    Object.entries(data).forEach(([key, val]) => {
-      const input = document.createElement('input')
-      input.type  = 'hidden'
-      input.name  = key
-      input.value = val
-      hiddenForm.appendChild(input)
+    var fields = { name: name, facility: facility, phone: phone, email: email, facility_type: ftype }
+    Object.keys(fields).forEach(function(k) {
+      var inp = document.createElement('input')
+      inp.type  = 'hidden'
+      inp.name  = k
+      inp.value = fields[k]
+      hidden.appendChild(inp)
     })
 
-    document.body.appendChild(hiddenForm)
-    hiddenForm.submit()
+    document.body.appendChild(hidden)
+    hidden.submit()
 
-    // Show success after short delay
-    // (we can't detect completion from iframe — just assume success)
-    setTimeout(() => {
-      document.getElementById('demo-form').innerHTML = `
-        <div style="text-align:center;padding:20px 0">
-          <div style="font-size:48px;margin-bottom:16px">✅</div>
-          <h3 style="font-size:20px;font-weight:700;color:#111827;margin-bottom:8px">
-            Demo request received!
-          </h3>
-          <p style="font-size:15px;color:#4B5563;line-height:1.6;margin-bottom:24px">
-            Thank you, <strong>${data.name}</strong>.<br>
-            We will contact you on <strong>${data.phone}</strong> within 2 hours.
-          </p>
-          <button onclick="document.getElementById('demo-modal').style.display='none'"
-            class="btn btn--primary" style="width:100%;justify-content:center;padding:14px">
-            Close
-          </button>
-        </div>`
+    // Show success after 1.5s (can't read iframe response due to cross-origin)
+    setTimeout(function() {
+      document.getElementById('demo-form-wrap').innerHTML =
+        '<div style="text-align:center;padding:20px 0">' +
+        '<div style="font-size:48px;margin-bottom:16px">✅</div>' +
+        '<h3 style="font-size:20px;font-weight:700;color:#111827;margin-bottom:8px">Demo request received!</h3>' +
+        '<p style="font-size:15px;color:#4B5563;line-height:1.6;margin-bottom:24px">Thank you, <strong>' + name + '</strong>.<br>We will contact you on <strong>' + phone + '</strong> within 2 hours.</p>' +
+        '<button onclick="document.getElementById(\'demo-modal\').style.display=\'none\'" ' +
+        'style="background:#1A7A5E;color:white;padding:12px 24px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;width:100%">Close</button>' +
+        '</div>'
 
-      // Cleanup
-      document.body.removeChild(hiddenForm)
-      setTimeout(() => document.body.removeChild(iframe), 2000)
-
+      // Clean up
+      document.body.removeChild(hidden)
+      setTimeout(function() {
+        if (iframe.parentNode) document.body.removeChild(iframe)
+      }, 3000)
     }, 1500)
   })
-}
-
-setupDemoForm()
+})
 
 // Sticky nav on scroll
 window.addEventListener('scroll', () => {
