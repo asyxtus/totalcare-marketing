@@ -386,6 +386,12 @@ footer{background:var(--char);color:rgba(255,255,255,.6);padding:60px 0 32px}
   .hero-stats{grid-template-columns:1fr 1fr}
 }
 </style>
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    // Replace with your EmailJS Public Key (from emailjs.com → Account → API Keys)
+    emailjs.init('iWy8amYB-mDUP_B4X')
+  </script>
 </head>
 <body>
 
@@ -1291,18 +1297,10 @@ function toggleFaq(btn) {
   if (!isOpen) item.classList.add('open')
 }
 
-// Demo form — posts to Google Forms via hidden iframe
-// This is the most reliable cross-browser method. No fetch, no CORS.
+// Demo form — EmailJS (reliable, no backend, no CORS)
 document.addEventListener('DOMContentLoaded', function() {
   var form = document.getElementById('demo-form')
   if (!form) return
-
-  // Create a hidden iframe that absorbs the Google Forms response page
-  var iframe = document.createElement('iframe')
-  iframe.name = 'gf-hidden'
-  iframe.id   = 'gf-hidden'
-  iframe.style.cssText = 'display:none;width:0;height:0;border:0;position:absolute;left:-9999px'
-  document.body.appendChild(iframe)
 
   form.addEventListener('submit', function(e) {
     e.preventDefault()
@@ -1328,37 +1326,19 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.textContent = 'Sending...'
     btn.disabled    = true
 
-    // Build a real HTML form that posts directly to Google Forms
-    // targeting the hidden iframe — bypasses all CORS restrictions
-    var gform = document.createElement('form')
-    gform.method  = 'POST'
-    gform.action  = 'https://docs.google.com/forms/d/e/1FAIpQLSeuidek0kU7vrndflUtqMqCBJE1_EvigvywvGlyIAJd_yihgw/formResponse'
-    gform.target  = 'gf-hidden'
-    gform.style.display = 'none'
-
-    var fields = [
-      ['entry.899487679',  name],
-      ['entry.1955369023', facility],
-      ['entry.475293957',  phone],
-      ['entry.706464234',  email],
-      ['entry.472220153',  ftype]
-    ]
-
-    fields.forEach(function(pair) {
-      var inp   = document.createElement('input')
-      inp.type  = 'hidden'
-      inp.name  = pair[0]
-      inp.value = pair[1]
-      gform.appendChild(inp)
-    })
-
-    document.body.appendChild(gform)
-    gform.submit()
-
-    // Show success after 1.2s — Google Forms always accepts
-    // valid submissions; we can't read the iframe response (cross-origin)
-    // but if the form fields and IDs are correct it always works
-    setTimeout(function() {
+    // EmailJS — sends directly to your email, no backend needed
+    emailjs.send(
+      'service_a4fc39s',
+      'template_v1tzopt',
+      {
+        from_name:     name,
+        facility:      facility,
+        phone:         phone,
+        email:         email || 'Not provided',
+        facility_type: ftype,
+        reply_to:      email || 'noreply@totalcareos.com',
+      }
+    ).then(function() {
       document.getElementById('demo-form-wrap').innerHTML =
         '<div style="text-align:center;padding:20px 0">' +
         '<div style="font-size:48px;margin-bottom:16px">&#x2705;</div>' +
@@ -1370,10 +1350,16 @@ document.addEventListener('DOMContentLoaded', function() {
         'style="background:#1A7A5E;color:white;padding:12px 24px;border:none;border-radius:8px;' +
         'font-size:15px;font-weight:600;cursor:pointer;width:100%">Close</button>' +
         '</div>'
-
-      // Clean up the temporary form
-      if (gform.parentNode) document.body.removeChild(gform)
-    }, 1200)
+    }, function(error) {
+      console.error('EmailJS error:', error)
+      btn.textContent = 'Failed — please try again'
+      btn.style.background = '#DC2626'
+      btn.disabled = false
+      setTimeout(function() {
+        btn.textContent = 'Book my 30-minute demo →'
+        btn.style.background = ''
+      }, 3000)
+    })
   })
 })
 
