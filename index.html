@@ -1291,45 +1291,89 @@ function toggleFaq(btn) {
   if (!isOpen) item.classList.add('open')
 }
 
-// Demo form — Google Forms direct submission (no CORS issues)
+// Demo form — posts to Google Forms via hidden iframe
+// This is the most reliable cross-browser method. No fetch, no CORS.
 document.addEventListener('DOMContentLoaded', function() {
   var form = document.getElementById('demo-form')
   if (!form) return
+
+  // Create a hidden iframe that absorbs the Google Forms response page
+  var iframe = document.createElement('iframe')
+  iframe.name = 'gf-hidden'
+  iframe.id   = 'gf-hidden'
+  iframe.style.cssText = 'display:none;width:0;height:0;border:0;position:absolute;left:-9999px'
+  document.body.appendChild(iframe)
 
   form.addEventListener('submit', function(e) {
     e.preventDefault()
 
     var btn      = document.getElementById('demo-submit-btn')
-    var name     = form.querySelector('[name="name"]').value
-    var facility = form.querySelector('[name="facility"]').value
-    var phone    = form.querySelector('[name="phone"]').value
-    var email    = form.querySelector('[name="email"]').value || ''
+    var name     = form.querySelector('[name="name"]').value.trim()
+    var facility = form.querySelector('[name="facility"]').value.trim()
+    var phone    = form.querySelector('[name="phone"]').value.trim()
+    var email    = (form.querySelector('[name="email"]').value || '').trim()
     var ftype    = form.querySelector('[name="facility_type"]').value
+
+    if (!name || !facility || !phone || !ftype) {
+      btn.textContent = 'Please fill all required fields'
+      btn.style.background = '#DC2626'
+      setTimeout(function() {
+        btn.textContent = 'Book my 30-minute demo →'
+        btn.style.background = ''
+        btn.disabled = false
+      }, 2000)
+      return
+    }
 
     btn.textContent = 'Sending...'
     btn.disabled    = true
 
-    var url  = 'https://docs.google.com/forms/d/e/1FAIpQLSeuidek0kU7vrndflUtqMqCBJE1_EvigvywvGlyIAJd_yihgw/formResponse'
-    var data = new FormData()
-    data.append('entry.899487679',  name)
-    data.append('entry.1955369023', facility)
-    data.append('entry.475293957',  phone)
-    data.append('entry.706464234',  email)
-    data.append('entry.472220153',  ftype)
+    // Build a real HTML form that posts directly to Google Forms
+    // targeting the hidden iframe — bypasses all CORS restrictions
+    var gform = document.createElement('form')
+    gform.method  = 'POST'
+    gform.action  = 'https://docs.google.com/forms/d/e/1FAIpQLSeuidek0kU7vrndflUtqMqCBJE1_EvigvywvGlyIAJd_yihgw/formResponse'
+    gform.target  = 'gf-hidden'
+    gform.style.display = 'none'
 
-    fetch(url, { method: 'POST', mode: 'no-cors', body: data })
+    var fields = [
+      ['entry.899487679',  name],
+      ['entry.1955369023', facility],
+      ['entry.475293957',  phone],
+      ['entry.706464234',  email],
+      ['entry.472220153',  ftype]
+    ]
 
+    fields.forEach(function(pair) {
+      var inp   = document.createElement('input')
+      inp.type  = 'hidden'
+      inp.name  = pair[0]
+      inp.value = pair[1]
+      gform.appendChild(inp)
+    })
+
+    document.body.appendChild(gform)
+    gform.submit()
+
+    // Show success after 1.2s — Google Forms always accepts
+    // valid submissions; we can't read the iframe response (cross-origin)
+    // but if the form fields and IDs are correct it always works
     setTimeout(function() {
       document.getElementById('demo-form-wrap').innerHTML =
         '<div style="text-align:center;padding:20px 0">' +
         '<div style="font-size:48px;margin-bottom:16px">&#x2705;</div>' +
         '<h3 style="font-size:20px;font-weight:700;color:#111827;margin-bottom:8px">Demo request received!</h3>' +
-        '<p style="font-size:15px;color:#4B5563;line-height:1.6;margin-bottom:24px">Thank you, <strong>' + name + '</strong>.<br>' +
+        '<p style="font-size:15px;color:#4B5563;line-height:1.6;margin-bottom:24px">' +
+        'Thank you, <strong>' + name + '</strong>.<br>' +
         'We will contact you on <strong>' + phone + '</strong> within 2 hours.</p>' +
         '<button onclick="document.getElementById('demo-modal').style.display='none'" ' +
-        'style="background:#1A7A5E;color:white;padding:12px 24px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;width:100%">Close</button>' +
+        'style="background:#1A7A5E;color:white;padding:12px 24px;border:none;border-radius:8px;' +
+        'font-size:15px;font-weight:600;cursor:pointer;width:100%">Close</button>' +
         '</div>'
-    }, 1000)
+
+      // Clean up the temporary form
+      if (gform.parentNode) document.body.removeChild(gform)
+    }, 1200)
   })
 })
 
