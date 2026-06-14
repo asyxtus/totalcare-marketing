@@ -1234,7 +1234,7 @@ footer{background:var(--char);color:rgba(255,255,255,.6);padding:60px 0 32px}
     <div style="font-size:28px;margin-bottom:8px">📅</div>
     <h3 style="font-size:22px;font-weight:700;margin-bottom:6px;color:var(--char)">Book a Demo</h3>
     <p style="font-size:14px;color:var(--gray-600);margin-bottom:24px;line-height:1.6">30 minutes. We show you the platform live. You ask every question you have. No sales pressure.</p>
-    <form onsubmit="submitDemo(event)">
+    <form id="demo-form">
       <div style="display:flex;flex-direction:column;gap:14px">
         <input type="text" placeholder="Your name" required style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--teal-500)'" onblur="this.style.borderColor='var(--gray-200)'">
         <input type="text" placeholder="Facility name" required style="padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--teal-500)'" onblur="this.style.borderColor='var(--gray-200)'">
@@ -1249,7 +1249,7 @@ footer{background:var(--char);color:rgba(255,255,255,.6);padding:60px 0 32px}
           <option>Multi-branch network</option>
           <option>NGO / corporate medical</option>
         </select>
-        <button type="submit" class="btn btn--primary" style="width:100%;justify-content:center;padding:14px">Book my 30-minute demo →</button>
+        <button type="submit" id="demo-submit-btn" class="btn btn--primary" style="width:100%;justify-content:center;padding:14px">Book my 30-minute demo →</button>
       </div>
     </form>
     <p style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:14px">We'll confirm via WhatsApp within 2 hours</p>
@@ -1275,21 +1275,65 @@ function toggleFaq(btn) {
 }
 
 // Demo form
-function submitDemo(e) {
-  e.preventDefault()
-  const form = e.target
-  const name = form.querySelector('input[type="text"]').value
-  const facility = form.querySelectorAll('input[type="text"]')[1].value
-  const phone = form.querySelector('input[type="tel"]').value
-  const type = form.querySelector('select').value
+document.getElementById('demo-form') 
+  ? setupDemoForm() 
+  : document.querySelector('[onsubmit]') && null
 
-  const message = encodeURIComponent(
-    `New demo request:\nName: ${name}\nFacility: ${facility}\nPhone: ${phone}\nType: ${type}`
-  )
-  // Replace 237XXXXXXXXX with your actual WhatsApp number
-  window.open(`https://wa.me/237674806650?text=${message}`, '_blank')
-  document.getElementById('demo-modal').style.display = 'none'
+function setupDemoForm() {
+  document.getElementById('demo-form').addEventListener('submit', async function(e) {
+    e.preventDefault()
+    const btn  = document.getElementById('demo-submit-btn')
+    const form = e.target
+
+    btn.textContent = 'Sending...'
+    btn.disabled    = true
+
+    const data = {
+      name:          form.name.value,
+      facility:      form.facility.value,
+      phone:         form.phone.value,
+      email:         form.email?.value || '',
+      facility_type: form.facility_type.value,
+    }
+
+    try {
+      await fetch('https://script.google.com/macros/s/AKfycbzSoeExU13YgbonaGHUav-uGVQvCP6_QBfZdybzRyVRSj_5ZYr64ad8IzH3xXiL0jDxbg/exec', {
+        method: 'POST',
+        mode:   'no-cors',
+        headers:{ 'Content-Type': 'application/json' },
+        body:   JSON.stringify(data),
+      })
+
+      // no-cors means we can't read the response — assume success
+      document.getElementById('demo-form').innerHTML = `
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:48px;margin-bottom:16px">✅</div>
+          <h3 style="font-size:20px;font-weight:700;color:var(--char);margin-bottom:8px">
+            Demo request received!
+          </h3>
+          <p style="font-size:15px;color:var(--gray-600);line-height:1.6;margin-bottom:24px">
+            Thank you, <strong>${data.name}</strong>.<br>
+            We will contact you on <strong>${data.phone}</strong> within 2 hours.
+          </p>
+          <button onclick="document.getElementById('demo-modal').style.display='none'"
+            class="btn btn--primary" style="width:100%;justify-content:center;padding:14px">
+            Close
+          </button>
+        </div>`
+
+    } catch(err) {
+      btn.textContent = 'Something went wrong — try again'
+      btn.style.background = '#DC2626'
+      btn.disabled = false
+      setTimeout(() => {
+        btn.textContent = 'Book my 30-minute demo →'
+        btn.style.background = ''
+      }, 3000)
+    }
+  })
 }
+
+setupDemoForm()
 
 // Sticky nav on scroll
 window.addEventListener('scroll', () => {
